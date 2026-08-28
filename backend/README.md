@@ -25,3 +25,9 @@ The runnable example is `examples/llm_usage.py`, configured by
 Canonical domain models, the frozen synthetic evaluation schema, fixture path,
 and workflow-neutral runner contract are documented in
 `../docs/20-domain-and-evaluation.md`.
+
+## Scheme ingestion and retrieval
+
+The source/version persistence ports, explicit review/publish lifecycle, synthetic
+fixture, and hybrid retrieval contracts are documented in
+`../docs/21-scheme-ingestion-and-retrieval-contracts.md`.

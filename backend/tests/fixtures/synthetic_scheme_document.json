@@ -1,0 +1,31 @@
+{
+  "document_id": "synthetic-document-001",
+  "title": "Synthetic Micro-Irrigation Support Test Policy",
+  "media_type": "text/plain",
+  "origin_locator": "synthetic://fixtures/micro-irrigation-policy",
+  "snapshot_locator": "fixture://synthetic_scheme_document.json",
+  "raw_content": "SYNTHETIC TEST DOCUMENT — NOT A REAL GOVERNMENT SCHEME. Section 1. The fictional support is available in Gujarat for agricultural micro-irrigation activity. Section 2. A fictional applicant must report no more than 2 hectares of agricultural land. Section 3. The fictional benefit is a mock equipment voucher. This document contains no farmer names, phone numbers, addresses, account identifiers, or other personal data.",
+  "chunks": [
+    {
+      "chunk_id": "synthetic-chunk-001",
+      "source_ref_id": "synthetic-source-001",
+      "locator": "section-1",
+      "ordinal": 0,
+      "text": "The fictional support is available in Gujarat for agricultural micro-irrigation activity."
+    },
+    {
+      "chunk_id": "synthetic-chunk-002",
+      "source_ref_id": "synthetic-source-002",
+      "locator": "section-2",
+      "ordinal": 1,
+      "text": "A fictional applicant must report no more than 2 hectares of agricultural land."
+    },
+    {
+      "chunk_id": "synthetic-chunk-003",
+      "source_ref_id": "synthetic-source-003",
+      "locator": "section-3",
+      "ordinal": 2,
+      "text": "The fictional benefit is a mock equipment voucher."
+    }
+  ]
+}

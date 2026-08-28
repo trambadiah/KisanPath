@@ -54,3 +54,29 @@ Fuse candidate results, then rerank with deterministic signals first. Semantic s
 ## Retrieval output
 
 Return scheme IDs plus evidence/context needed for downstream evaluation. Do not return arbitrary unreviewed internet text to the eligibility engine.
+
+## Implemented boundaries
+
+The initial implementation is storage-neutral and lives under:
+
+- `backend/src/kisanpath/persistence/` for source snapshots, untrusted chunks,
+  immutable published projections, repository protocols, and transaction boundaries;
+- `backend/src/kisanpath/ingestion/` for parser/extractor/validator ports and the
+  deterministic lifecycle;
+- `backend/src/kisanpath/retrieval/` for structured and semantic retrieval ports,
+  active-corpus verification, evidence resolution, and deterministic fusion.
+
+`PublishedSchemeVersion` is the only scheme record accepted by the trusted corpus.
+It can only be constructed with a canonical `Scheme` in `PUBLISHED` state. The
+publication transition requires both a prior `HumanReviewApproval` and a distinct
+human `PublicationApproval`. Persisting the transition and making the version
+visible are coupled by `PublicationUnitOfWork` so database adapters can implement
+them as one transaction.
+
+The checked-in corpus fixture is intentionally fictional and lives at
+`backend/tests/fixtures/synthetic_scheme_document.json`. Acquiring, interpreting,
+or importing real scheme documents is a separate data-curation task and is not part
+of this implementation.
+
+Detailed contracts and example usage are in
+`docs/21-scheme-ingestion-and-retrieval-contracts.md`.
