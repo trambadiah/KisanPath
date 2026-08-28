@@ -1,0 +1,249 @@
+{
+  "schema_version": "1.0",
+  "dataset_id": "kisanpath-synthetic-seed",
+  "dataset_version": "1.0.0",
+  "frozen": true,
+  "synthetic_only": true,
+  "created_at": "2026-08-28T00:00:00+05:30",
+  "cases": [
+    {
+      "case_id": "likely_irrigation_en_001",
+      "title": "Clear likely-eligible irrigation case",
+      "synthetic": true,
+      "tags": ["likely_eligible"],
+      "input": {
+        "utterance": "I farm 1.5 hectares in Anand district, Gujarat, own the land, grow groundnut, and need drip-irrigation support.",
+        "language_hint": "en",
+        "input_mode": "text"
+      },
+      "expected_profile": {
+        "state": {"status": "known", "value": "Gujarat"},
+        "district": {"status": "known", "value": "Anand"},
+        "land_area": {
+          "status": "known",
+          "value": {
+            "value": "1.5",
+            "unit": "hectare",
+            "normalized_hectares": "1.500000",
+            "normalization_status": "normalized",
+            "normalization_rule": "hectare_to_hectare_v1"
+          }
+        },
+        "land_ownership": {"status": "known", "value": "owner"},
+        "crops": {"status": "known", "value": ["groundnut"]},
+        "requested_needs": {"status": "known", "value": ["drip_irrigation"]},
+        "preferred_language": {"status": "known", "value": "en"}
+      },
+      "expected_relevant_scheme_ids": ["synthetic-gujarat-irrigation"],
+      "expected_scheme_outcomes": [
+        {
+          "scheme_id": "synthetic-gujarat-irrigation",
+          "status": "LIKELY_ELIGIBLE",
+          "rule_outcomes": [
+            {"rule_id": "jurisdiction_gujarat", "result": "PASS"},
+            {"rule_id": "land_at_most_2_hectares", "result": "PASS"},
+            {"rule_id": "ownership_recorded", "result": "PASS"}
+          ]
+        }
+      ],
+      "audit_note": "Synthetic positive case with all required facts explicitly present."
+    },
+    {
+      "case_id": "not_eligible_jurisdiction_hi_002",
+      "title": "Clear blocking jurisdiction case",
+      "synthetic": true,
+      "tags": ["not_eligible"],
+      "input": {
+        "utterance": "मैं राजस्थान के कोटा जिले में एक हेक्टेयर जमीन का मालिक हूँ और ड्रिप सिंचाई सहायता चाहता हूँ।",
+        "language_hint": "hi",
+        "input_mode": "text"
+      },
+      "expected_profile": {
+        "state": {"status": "known", "value": "Rajasthan"},
+        "district": {"status": "known", "value": "Kota"},
+        "land_area": {
+          "status": "known",
+          "value": {
+            "value": "1",
+            "unit": "hectare",
+            "normalized_hectares": "1.000000",
+            "normalization_status": "normalized",
+            "normalization_rule": "hectare_to_hectare_v1"
+          }
+        },
+        "land_ownership": {"status": "known", "value": "owner"},
+        "requested_needs": {"status": "known", "value": ["drip_irrigation"]},
+        "preferred_language": {"status": "known", "value": "hi"}
+      },
+      "expected_relevant_scheme_ids": ["synthetic-gujarat-irrigation"],
+      "expected_scheme_outcomes": [
+        {
+          "scheme_id": "synthetic-gujarat-irrigation",
+          "status": "NOT_ELIGIBLE",
+          "rule_outcomes": [
+            {"rule_id": "jurisdiction_gujarat", "result": "FAIL"},
+            {"rule_id": "land_at_most_2_hectares", "result": "PASS"}
+          ],
+          "blocking_rule_ids": ["jurisdiction_gujarat"]
+        }
+      ],
+      "audit_note": "Synthetic negative case whose explicit state fails the jurisdiction rule."
+    },
+    {
+      "case_id": "missing_land_area_en_003",
+      "title": "Required land area is missing",
+      "synthetic": true,
+      "tags": ["insufficient_information"],
+      "input": {
+        "utterance": "I am a tenant farmer in Mehsana district, Gujarat, and I need irrigation support for cumin.",
+        "language_hint": "en",
+        "input_mode": "text"
+      },
+      "expected_profile": {
+        "state": {"status": "known", "value": "Gujarat"},
+        "district": {"status": "known", "value": "Mehsana"},
+        "land_ownership": {"status": "known", "value": "tenant"},
+        "crops": {"status": "known", "value": ["cumin"]},
+        "requested_needs": {"status": "known", "value": ["irrigation"]},
+        "preferred_language": {"status": "known", "value": "en"}
+      },
+      "expected_relevant_scheme_ids": ["synthetic-gujarat-irrigation"],
+      "expected_scheme_outcomes": [
+        {
+          "scheme_id": "synthetic-gujarat-irrigation",
+          "status": "INSUFFICIENT_INFORMATION",
+          "rule_outcomes": [
+            {"rule_id": "jurisdiction_gujarat", "result": "PASS"},
+            {"rule_id": "land_at_most_2_hectares", "result": "UNKNOWN"}
+          ],
+          "missing_fields": ["land_area"]
+        }
+      ],
+      "audit_note": "Synthetic missing-information case; no land area may be inferred."
+    },
+    {
+      "case_id": "conflicting_ownership_en_004",
+      "title": "Conflicting ownership requires manual review",
+      "synthetic": true,
+      "tags": ["manual_review", "conflicting_profile"],
+      "input": {
+        "utterance": "The two-hectare farm in Surat district is mine, but the land record lists me as a tenant. I need equipment support.",
+        "language_hint": "en",
+        "input_mode": "text"
+      },
+      "expected_profile": {
+        "state": {"status": "known", "value": "Gujarat"},
+        "district": {"status": "known", "value": "Surat"},
+        "land_area": {
+          "status": "known",
+          "value": {
+            "value": "2",
+            "unit": "hectare",
+            "normalized_hectares": "2.000000",
+            "normalization_status": "normalized",
+            "normalization_rule": "hectare_to_hectare_v1"
+          }
+        },
+        "land_ownership": {
+          "status": "conflicting",
+          "alternatives": ["owner", "tenant"]
+        },
+        "requested_needs": {"status": "known", "value": ["farm_equipment"]},
+        "preferred_language": {"status": "known", "value": "en"}
+      },
+      "expected_relevant_scheme_ids": ["synthetic-farm-equipment"],
+      "expected_scheme_outcomes": [
+        {
+          "scheme_id": "synthetic-farm-equipment",
+          "status": "MANUAL_REVIEW",
+          "rule_outcomes": [
+            {"rule_id": "jurisdiction_gujarat", "result": "PASS"},
+            {"rule_id": "verified_land_tenure", "result": "MANUAL_REVIEW"}
+          ],
+          "manual_review_rule_ids": ["verified_land_tenure"]
+        }
+      ],
+      "audit_note": "Synthetic contradiction is retained instead of silently selecting an ownership value."
+    },
+    {
+      "case_id": "ambiguous_bigha_gu_005",
+      "title": "Bigha cannot be normalized safely",
+      "synthetic": true,
+      "tags": ["ambiguous_land_unit", "insufficient_information"],
+      "input": {
+        "utterance": "મારી પાસે ત્રણ બીઘા જમીન છે અને મને સિંચાઈ માટે સહાય જોઈએ છે.",
+        "language_hint": "gu",
+        "input_mode": "text"
+      },
+      "expected_profile": {
+        "land_area": {
+          "status": "known",
+          "value": {
+            "value": "3",
+            "unit": "bigha",
+            "normalized_hectares": null,
+            "normalization_status": "regional_context_required",
+            "normalization_rule": "bigha_requires_reviewed_regional_conversion"
+          }
+        },
+        "requested_needs": {"status": "known", "value": ["irrigation"]},
+        "preferred_language": {"status": "known", "value": "gu"}
+      },
+      "expected_relevant_scheme_ids": ["synthetic-gujarat-irrigation"],
+      "expected_scheme_outcomes": [
+        {
+          "scheme_id": "synthetic-gujarat-irrigation",
+          "status": "INSUFFICIENT_INFORMATION",
+          "rule_outcomes": [
+            {"rule_id": "jurisdiction_gujarat", "result": "UNKNOWN"},
+            {"rule_id": "land_at_most_2_hectares", "result": "UNKNOWN"}
+          ],
+          "missing_fields": ["state", "land_area.normalized_hectares"]
+        }
+      ],
+      "audit_note": "Synthetic regional-unit case preserves both geography and normalized area as unknown."
+    },
+    {
+      "case_id": "multilingual_codeswitch_gu_hi_006",
+      "title": "Gujarati and Hindi code-switching",
+      "synthetic": true,
+      "tags": ["multilingual", "code_switching", "likely_eligible"],
+      "input": {
+        "utterance": "હું રાજકોટ, ગુજરાતમાં 2 acres જમીનનો owner છું, मूंगफली उगाता हूँ और drip irrigation सहायता चाहिए।",
+        "language_hint": "gu",
+        "input_mode": "text"
+      },
+      "expected_profile": {
+        "state": {"status": "known", "value": "Gujarat"},
+        "district": {"status": "known", "value": "Rajkot"},
+        "land_area": {
+          "status": "known",
+          "value": {
+            "value": "2",
+            "unit": "acre",
+            "normalized_hectares": "0.809371",
+            "normalization_status": "normalized",
+            "normalization_rule": "acre_to_hectare_v1"
+          }
+        },
+        "land_ownership": {"status": "known", "value": "owner"},
+        "crops": {"status": "known", "value": ["groundnut"]},
+        "requested_needs": {"status": "known", "value": ["drip_irrigation"]},
+        "preferred_language": {"status": "known", "value": "gu"}
+      },
+      "expected_relevant_scheme_ids": ["synthetic-gujarat-irrigation"],
+      "expected_scheme_outcomes": [
+        {
+          "scheme_id": "synthetic-gujarat-irrigation",
+          "status": "LIKELY_ELIGIBLE",
+          "rule_outcomes": [
+            {"rule_id": "jurisdiction_gujarat", "result": "PASS"},
+            {"rule_id": "land_at_most_2_hectares", "result": "PASS"},
+            {"rule_id": "supported_crop", "result": "PASS"}
+          ]
+        }
+      ],
+      "audit_note": "Synthetic code-switched case tests Gujarati, Hindi, and English field extraction."
+    }
+  ]
+}

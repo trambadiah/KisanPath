@@ -129,3 +129,9 @@ created/updated metadata
 ```
 
 Conversation history may be separately stored, but workflow correctness must not depend on reconstructing canonical state from raw chat messages each turn.
+
+## Implemented foundation contract
+
+The immutable Phase 0 models are implemented under
+`backend/src/kisanpath/domain/`. Detailed invariants, fixture locations, and the
+evaluation runner boundary are documented in `docs/20-domain-and-evaluation.md`.

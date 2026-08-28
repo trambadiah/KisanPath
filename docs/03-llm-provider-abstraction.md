@@ -166,3 +166,13 @@ Every adapter must run against the same behavioral tests:
 - usage normalization;
 - provider error mapping;
 - healthcheck.
+
+## Implemented Phase 1 contract
+
+The implementation lives under `backend/src/kisanpath/llm/`. Configuration and
+usage examples are in `backend/examples/`, while the concise adapter capability
+matrix and verification commands are maintained in `docs/19-llm-adapters.md`.
+
+Mocked contract tests are mandatory in CI. Live provider smoke tests require the
+explicit `KISANPATH_RUN_LIVE_LLM_TESTS=1` opt-in and skip when their model or
+credentials are not configured.

@@ -1,0 +1,27 @@
+[llm]
+fallback_enabled = true
+evaluation_fallback_enabled = false
+
+[llm.default]
+provider = "openai"
+fallbacks = ["ollama"]
+
+[llm.agents.profile]
+provider = "gemini"
+fallbacks = ["ollama"]
+required_capabilities = ["structured_output"]
+
+[llm.providers.openai]
+adapter = "openai"
+model = "gpt-5-mini"
+api_key_env = "OPENAI_API_KEY"
+
+[llm.providers.gemini]
+adapter = "gemini"
+model = "gemini-2.5-flash"
+api_key_env = "GEMINI_API_KEY"
+
+[llm.providers.ollama]
+adapter = "ollama"
+model = "qwen3:8b"
+base_url = "http://localhost:11434"

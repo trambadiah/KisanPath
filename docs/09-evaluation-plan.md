@@ -108,3 +108,10 @@ Good candidate experiments:
 7. test an additional debate/critic agent and remove it if it does not improve outcomes.
 
 The changelog should preserve failed/removed experiments rather than hiding them.
+
+## Implemented seed contract
+
+The versioned synthetic seed dataset is
+`data/evaluation/seed-cases.v1.json`. Its typed loader and workflow-neutral runner
+live under `backend/src/kisanpath/evaluation/`. See
+`docs/20-domain-and-evaluation.md` for the schema and usage boundary.
