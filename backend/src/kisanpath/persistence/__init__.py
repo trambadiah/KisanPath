@@ -7,6 +7,7 @@ from kisanpath.persistence.models import (
     SourceDocumentRecord,
 )
 from kisanpath.persistence.repositories import (
+    ConversationRepository,
     IngestionRepository,
     PublicationUnitOfWork,
     PublishedCorpusRepository,
@@ -15,6 +16,7 @@ from kisanpath.persistence.repositories import (
 
 __all__ = [
     "IngestionRepository",
+    "ConversationRepository",
     "ParsedDocumentChunk",
     "PublishedCorpusRepository",
     "PublishedDocumentChunk",

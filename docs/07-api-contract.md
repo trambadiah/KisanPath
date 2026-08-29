@@ -66,3 +66,16 @@ Use a stable internal shape such as:
 ```
 
 Never return raw provider exceptions, database messages, stack traces, or secrets to clients.
+
+## Application workflow boundary
+
+The transport-neutral command/result models for typed messages are implemented in
+`backend/src/kisanpath/workflows/models.py`. `TextWorkflowResult` returns safe
+canonical conversation state, a localized response or pending question, and the
+progressive events listed above. It does not expose provider responses or hidden
+reasoning.
+
+The current phase implements the application boundary, not FastAPI routes. A later
+transport layer can map `POST /v1/conversations`, message submission, and session
+reads directly onto `TextEligibilityWorkflow` and `ConversationRepository` without
+moving business logic into route handlers.

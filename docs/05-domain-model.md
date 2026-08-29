@@ -135,3 +135,13 @@ Conversation history may be separately stored, but workflow correctness must not
 The immutable Phase 0 models are implemented under
 `backend/src/kisanpath/domain/`. Detailed invariants, fixture locations, and the
 evaluation runner boundary are documented in `docs/20-domain-and-evaluation.md`.
+
+The text vertical slice extends canonical conversation persistence with a pending
+clarification, verified claim batch, last safe response, processed message IDs,
+and an append-only workflow transition audit. These are typed workflow artifacts;
+raw LLM chat history is not required to resume or inspect a completed turn.
+
+Typed profile extraction updates and deterministic merge results live in
+`domain/profile_update.py`. The merge service never silently replaces a
+contradictory value and requires confirmation for low-confidence critical fields.
+Details are documented in `docs/22-text-vertical-slice.md`.

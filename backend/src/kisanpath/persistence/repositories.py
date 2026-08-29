@@ -11,6 +11,7 @@ from kisanpath.persistence.models import (
 )
 
 if TYPE_CHECKING:
+    from kisanpath.domain.conversation import ConversationState
     from kisanpath.ingestion.models import IngestionRecord
 
 
@@ -18,6 +19,18 @@ class SourceDocumentRepository(Protocol):
     async def add_source(self, document: SourceDocumentRecord) -> None: ...
 
     async def get_source(self, document_id: str) -> SourceDocumentRecord | None: ...
+
+
+class ConversationRepository(Protocol):
+    """Canonical workflow memory with optimistic concurrency."""
+
+    async def add_conversation(self, state: ConversationState) -> None: ...
+
+    async def get_conversation(self, conversation_id: str) -> ConversationState | None: ...
+
+    async def save_conversation(
+        self, state: ConversationState, *, expected_revision: int
+    ) -> None: ...
 
 
 class IngestionRepository(Protocol):

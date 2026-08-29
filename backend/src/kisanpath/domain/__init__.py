@@ -1,9 +1,12 @@
 """Framework-independent canonical KisanPath domain models."""
 
+from kisanpath.domain.clarification import ClarificationNeed, ClarificationPolicy
 from kisanpath.domain.conversation import (
     ConversationState,
+    PendingClarification,
     PendingConfirmation,
     WorkflowStage,
+    WorkflowTransition,
 )
 from kisanpath.domain.eligibility import (
     ConfidenceSummary,
@@ -15,6 +18,14 @@ from kisanpath.domain.eligibility import (
     SchemeEvaluation,
     SchemeStatus,
 )
+from kisanpath.domain.eligibility_engine import (
+    EligibilityEngine,
+    EligibilityEvaluationError,
+    SemanticEvaluationRequest,
+    SemanticRuleAssessment,
+    SemanticRuleEvaluator,
+)
+from kisanpath.domain.evidence import EvidenceVerifier
 from kisanpath.domain.profile import (
     FactProvenance,
     FactStatus,
@@ -28,6 +39,21 @@ from kisanpath.domain.profile import (
     LanguageCode,
     ProfileFact,
     normalize_land_area,
+)
+from kisanpath.domain.profile_update import (
+    ConfirmationCandidate,
+    ExtractedLandArea,
+    ExtractedValue,
+    ProfileExtraction,
+    ProfileMerger,
+    ProfileMergeResult,
+)
+from kisanpath.domain.response import (
+    LocalizedResponse,
+    ResponseComposer,
+    ResponseLocalizer,
+    ResponsePlan,
+    SchemeResponseItem,
 )
 from kisanpath.domain.scheme import (
     EligibilityRule,
@@ -51,10 +77,16 @@ __all__ = [
     "ClaimVerification",
     "ClaimVerificationBatch",
     "ConfidenceSummary",
+    "ClarificationNeed",
+    "ClarificationPolicy",
     "ConversationState",
+    "ConfirmationCandidate",
     "EligibilityOperator",
+    "EligibilityEngine",
+    "EligibilityEvaluationError",
     "EligibilityRule",
     "EvaluatorType",
+    "EvidenceVerifier",
     "FactProvenance",
     "FactStatus",
     "FarmerCategory",
@@ -66,20 +98,35 @@ __all__ = [
     "LandOwnership",
     "LandUnit",
     "LanguageCode",
+    "LocalizedResponse",
     "PendingConfirmation",
+    "PendingClarification",
     "ProfileFact",
+    "ProfileExtraction",
+    "ProfileMergeResult",
+    "ProfileMerger",
     "PublicationState",
+    "ResponseComposer",
+    "ResponseLocalizer",
+    "ResponsePlan",
     "RuleEvaluation",
     "RuleResult",
     "RuleType",
     "Scheme",
     "SchemeEvaluation",
     "SchemeStatus",
+    "SchemeResponseItem",
     "SchemeVersion",
     "SourceReference",
     "SourceReviewStatus",
+    "SemanticEvaluationRequest",
+    "SemanticRuleAssessment",
+    "SemanticRuleEvaluator",
     "SourcedText",
     "VerificationStatus",
     "WorkflowStage",
+    "WorkflowTransition",
+    "ExtractedLandArea",
+    "ExtractedValue",
     "normalize_land_area",
 ]

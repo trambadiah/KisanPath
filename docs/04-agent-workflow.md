@@ -100,3 +100,18 @@ Example:
 ```
 
 Do not normalize ambiguous regional units such as bigha without enough geographic context.
+
+## Implemented text vertical slice
+
+The first framework-independent text workflow is implemented under
+`backend/src/kisanpath/workflows/`. It follows the explicit state machine and
+persists every canonical transition through `ConversationRepository`.
+
+LLM-backed components are limited to structured profile extraction and rules
+explicitly marked `semantic`. Profile merging, critical-value thresholds,
+contradiction preservation, clarification selection, deterministic rule
+comparisons, result aggregation, provenance verification, localization templates,
+and state transitions are deterministic services.
+
+See `docs/22-text-vertical-slice.md` for the dependency graph, persistence model,
+usage example, and tested safety properties.

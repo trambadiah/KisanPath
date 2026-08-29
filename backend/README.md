@@ -31,3 +31,9 @@ and workflow-neutral runner contract are documented in
 The source/version persistence ports, explicit review/publish lifecycle, synthetic
 fixture, and hybrid retrieval contracts are documented in
 `../docs/21-scheme-ingestion-and-retrieval-contracts.md`.
+
+## Text vertical slice
+
+The persistent text workflow, profile merge policy, deterministic/semantic
+eligibility boundary, evidence verification, localization, usage example, and E2E
+safety tests are documented in `../docs/22-text-vertical-slice.md`.
