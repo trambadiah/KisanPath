@@ -1,0 +1,19 @@
+[voice]
+stt_provider = "openai"
+tts_provider = "openai"
+
+[voice.stt_providers.openai]
+adapter = "openai"
+model = "gpt-4o-mini-transcribe"
+api_key_env = "OPENAI_API_KEY"
+timeout_seconds = 30
+include_logprobs = true
+
+[voice.tts_providers.openai]
+adapter = "openai"
+model = "tts-1"
+api_key_env = "OPENAI_API_KEY"
+timeout_seconds = 30
+voice = "alloy"
+audio_format = "mp3"
+speed = 1.0

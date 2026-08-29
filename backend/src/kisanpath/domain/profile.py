@@ -16,6 +16,11 @@ class LanguageCode(StrEnum):
     UNDETERMINED = "und"
 
 
+class InputModality(StrEnum):
+    TEXT = "text"
+    VOICE = "voice"
+
+
 class FactStatus(StrEnum):
     KNOWN = "known"
     UNKNOWN = "unknown"
@@ -68,6 +73,32 @@ class FactProvenance(BaseModel):
     source_utterance: str | None = Field(default=None, min_length=1, max_length=500)
     confidence: float | None = Field(default=None, ge=0, le=1)
     confirmed: bool = False
+    source_modality: InputModality = InputModality.TEXT
+    source_provider: str | None = Field(default=None, min_length=1)
+    source_model: str | None = Field(default=None, min_length=1)
+    asr_confidence: float | None = Field(default=None, ge=0, le=1)
+    source_segment_ids: tuple[str, ...] = ()
+    ambiguity_ids: tuple[str, ...] = ()
+    confirmed_by_message_id: str | None = Field(default=None, min_length=1)
+
+    @model_validator(mode="after")
+    def validate_source(self) -> FactProvenance:
+        if self.source_modality is InputModality.VOICE:
+            if not self.source_provider or not self.source_model:
+                raise ValueError("voice provenance requires provider and model")
+        elif (
+            self.asr_confidence is not None
+            or self.source_segment_ids
+            or self.ambiguity_ids
+        ):
+            raise ValueError("ASR metadata is only valid for voice provenance")
+        if len(self.source_segment_ids) != len(set(self.source_segment_ids)):
+            raise ValueError("source segment IDs must be unique")
+        if len(self.ambiguity_ids) != len(set(self.ambiguity_ids)):
+            raise ValueError("ambiguity IDs must be unique")
+        if self.confirmed_by_message_id and not self.confirmed:
+            raise ValueError("confirmed_by_message_id requires confirmed provenance")
+        return self
 
 
 FactT = TypeVar("FactT")

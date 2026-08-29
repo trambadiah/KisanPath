@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic.types import JsonValue
 
 from kisanpath.domain.eligibility import SchemeEvaluation
-from kisanpath.domain.profile import FarmerProfile, LanguageCode
+from kisanpath.domain.profile import FarmerProfile, InputModality, LanguageCode
 from kisanpath.domain.verification import ClaimVerificationBatch
 
 
@@ -35,6 +35,23 @@ class PendingConfirmation(BaseModel):
     proposed_value: JsonValue
     source_message_id: str = Field(min_length=1)
     prompt: str = Field(min_length=1)
+    reason: str = Field(default="critical_value_requires_confirmation", min_length=1)
+    alternatives: tuple[JsonValue, ...] = ()
+    source_modality: InputModality = InputModality.TEXT
+    source_provider: str | None = Field(default=None, min_length=1)
+    source_model: str | None = Field(default=None, min_length=1)
+    asr_confidence: float | None = Field(default=None, ge=0, le=1)
+    source_segment_ids: tuple[str, ...] = ()
+    ambiguity_ids: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def validate_voice_source(self) -> PendingConfirmation:
+        if self.source_modality is InputModality.VOICE:
+            if not self.source_provider or not self.source_model:
+                raise ValueError("voice confirmation requires provider and model")
+        elif self.asr_confidence is not None or self.source_segment_ids or self.ambiguity_ids:
+            raise ValueError("ASR metadata requires voice confirmation")
+        return self
 
 
 class PendingClarification(BaseModel):

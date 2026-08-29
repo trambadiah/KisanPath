@@ -31,6 +31,7 @@ from kisanpath.domain.profile import (
     FactStatus,
     FarmerCategory,
     FarmerProfile,
+    InputModality,
     IrrigationType,
     LandArea,
     LandNormalizationStatus,
@@ -41,10 +42,14 @@ from kisanpath.domain.profile import (
     normalize_land_area,
 )
 from kisanpath.domain.profile_update import (
+    ASRAmbiguityProvenance,
+    ASRSegmentProvenance,
     ConfirmationCandidate,
     ExtractedLandArea,
     ExtractedValue,
+    FieldInputProvenance,
     ProfileExtraction,
+    ProfileMergeContext,
     ProfileMerger,
     ProfileMergeResult,
 )
@@ -74,6 +79,8 @@ from kisanpath.domain.verification import (
 
 __all__ = [
     "ClaimImportance",
+    "ASRAmbiguityProvenance",
+    "ASRSegmentProvenance",
     "ClaimVerification",
     "ClaimVerificationBatch",
     "ConfidenceSummary",
@@ -89,9 +96,11 @@ __all__ = [
     "EvidenceVerifier",
     "FactProvenance",
     "FactStatus",
+    "FieldInputProvenance",
     "FarmerCategory",
     "FarmerProfile",
     "IrrigationType",
+    "InputModality",
     "Jurisdiction",
     "LandArea",
     "LandNormalizationStatus",
@@ -103,6 +112,7 @@ __all__ = [
     "PendingClarification",
     "ProfileFact",
     "ProfileExtraction",
+    "ProfileMergeContext",
     "ProfileMergeResult",
     "ProfileMerger",
     "PublicationState",

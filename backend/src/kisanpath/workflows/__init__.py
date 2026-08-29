@@ -7,6 +7,11 @@ from kisanpath.workflows.models import (
     WorkflowEventType,
 )
 from kisanpath.workflows.text import TextEligibilityWorkflow
+from kisanpath.workflows.voice import (
+    VoiceEligibilityWorkflow,
+    VoiceMessage,
+    VoiceWorkflowResult,
+)
 
 __all__ = [
     "TextEligibilityWorkflow",
@@ -14,4 +19,7 @@ __all__ = [
     "TextWorkflowResult",
     "WorkflowEvent",
     "WorkflowEventType",
+    "VoiceEligibilityWorkflow",
+    "VoiceMessage",
+    "VoiceWorkflowResult",
 ]

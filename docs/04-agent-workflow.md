@@ -115,3 +115,15 @@ and state transitions are deterministic services.
 
 See `docs/22-text-vertical-slice.md` for the dependency graph, persistence model,
 usage example, and tested safety properties.
+
+## Implemented voice entry point
+
+`VoiceEligibilityWorkflow` transcribes through the provider-independent `STTClient`
+port and passes the normalized transcript to the same `TextEligibilityWorkflow` used
+by typed input. ASR confidence, segments, ambiguity alternatives, provider, and model
+are carried as trusted merge provenance. Critical ambiguity and regional land units
+stop at the existing `CONFIRM_VALUE` state. Optional localized audio is produced
+through the provider-independent `TTSClient` port.
+
+See `docs/23-voice-abstraction.md` for configuration, contracts, usage, capability
+matrix, and test coverage.

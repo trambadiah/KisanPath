@@ -1,12 +1,25 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
 from kisanpath.domain.profile import (
     FactProvenance,
     FactStatus,
     FarmerProfile,
+    InputModality,
+    LandUnit,
     ProfileFact,
 )
-from kisanpath.domain.profile_update import ExtractedValue, ProfileExtraction, ProfileMerger
+from kisanpath.domain.profile_update import (
+    ASRAmbiguityProvenance,
+    ASRSegmentProvenance,
+    ExtractedLandArea,
+    ExtractedValue,
+    FieldInputProvenance,
+    ProfileExtraction,
+    ProfileMergeContext,
+    ProfileMerger,
+)
 
 
 def test_merge_adds_explicit_fact_with_message_provenance() -> None:
@@ -89,3 +102,115 @@ def test_explicit_confirmation_resolves_a_previous_conflict() -> None:
     assert result.profile.state.value == "Rajasthan"
     assert result.profile.state.provenance[-1].confirmed is True
     assert result.conflicting_fields == ()
+
+
+def test_asr_three_vs_thirty_acres_requires_confirmation_and_preserves_provenance() -> None:
+    context = ProfileMergeContext(
+        source_message_id="voice-message-1",
+        source_modality=InputModality.VOICE,
+        source_provider="mock-stt",
+        source_model="mock-asr-v1",
+        transcript_confidence=0.91,
+        segments=(
+            ASRSegmentProvenance(
+                segment_id="segment-land",
+                text="I have 3 acres of land",
+                confidence=0.91,
+            ),
+        ),
+        ambiguities=(
+            ASRAmbiguityProvenance(
+                ambiguity_id="ambiguity-number",
+                text="3 acres",
+                alternatives=("3 acres", "30 acres"),
+            ),
+        ),
+    )
+    extraction = ProfileExtraction(
+        land_area=ExtractedValue(
+            value=ExtractedLandArea(value=Decimal("3"), unit=LandUnit.ACRE),
+            confidence=0.99,
+            source_utterance="3 acres",
+        )
+    )
+
+    result = ProfileMerger().merge(
+        FarmerProfile(), extraction, message_id="voice-message-1", context=context
+    )
+
+    assert result.profile.land_area.status is FactStatus.UNKNOWN
+    candidate = result.confirmation_candidates[0]
+    assert candidate.reason == "asr_ambiguity_requires_confirmation"
+    assert candidate.alternatives == ("3 acres", "30 acres")
+    assert candidate.asr_confidence == 0.91
+    assert candidate.source_segment_ids == ("segment-land",)
+    assert candidate.ambiguity_ids == ("ambiguity-number",)
+
+    confirmed_context = ProfileMergeContext(
+        source_message_id="confirmation-message",
+        source_modality=InputModality.VOICE,
+        source_provider="mock-stt",
+        source_model="mock-asr-v1",
+        transcript_confidence=0.91,
+        field_sources=(
+            FieldInputProvenance(
+                field="land_area",
+                source_message_id="voice-message-1",
+                source_modality=InputModality.VOICE,
+                source_provider="mock-stt",
+                source_model="mock-asr-v1",
+                asr_confidence=0.91,
+                source_segment_ids=("segment-land",),
+                ambiguity_ids=("ambiguity-number",),
+                alternatives=("3 acres", "30 acres"),
+            ),
+        ),
+    )
+    confirmed = ProfileMerger().merge(
+        FarmerProfile(),
+        extraction.model_copy(update={"confirmed_fields": ("land_area",)}),
+        message_id="confirmation-message",
+        context=confirmed_context,
+    )
+
+    provenance = confirmed.profile.land_area.provenance[0]
+    assert provenance.source_message_id == "voice-message-1"
+    assert provenance.confirmed_by_message_id == "confirmation-message"
+    assert provenance.source_modality is InputModality.VOICE
+    assert provenance.asr_confidence == 0.91
+    assert provenance.ambiguity_ids == ("ambiguity-number",)
+
+
+def test_ambiguous_regional_land_unit_from_voice_requires_confirmation() -> None:
+    context = ProfileMergeContext(
+        source_message_id="voice-message-bigha",
+        source_modality=InputModality.VOICE,
+        source_provider="mock-stt",
+        source_model="mock-asr-v1",
+        transcript_confidence=0.98,
+        segments=(
+            ASRSegmentProvenance(
+                segment_id="segment-bigha",
+                text="I cultivate 2 bigha",
+                confidence=0.98,
+            ),
+        ),
+    )
+    result = ProfileMerger().merge(
+        FarmerProfile(),
+        ProfileExtraction(
+            land_area=ExtractedValue(
+                value=ExtractedLandArea(value=2, unit=LandUnit.BIGHA),
+                confidence=0.99,
+                source_utterance="2 bigha",
+            )
+        ),
+        message_id="voice-message-bigha",
+        context=context,
+    )
+
+    assert result.profile.land_area.status is FactStatus.UNKNOWN
+    assert (
+        result.confirmation_candidates[0].reason
+        == "regional_land_unit_requires_confirmation"
+    )

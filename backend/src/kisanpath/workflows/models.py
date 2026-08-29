@@ -19,6 +19,7 @@ class TextMessage(BaseModel):
 
 
 class WorkflowEventType(StrEnum):
+    TRANSCRIPT_READY = "transcript.ready"
     PROFILE_UPDATED = "profile.updated"
     CONFIRMATION_REQUIRED = "confirmation.required"
     CLARIFICATION_REQUIRED = "clarification.required"
@@ -27,6 +28,7 @@ class WorkflowEventType(StrEnum):
     ELIGIBILITY_COMPLETED = "eligibility.completed"
     VERIFICATION_COMPLETED = "verification.completed"
     RESPONSE_READY = "response.ready"
+    AUDIO_READY = "audio.ready"
 
 
 class WorkflowEvent(BaseModel):

@@ -19,7 +19,11 @@ from kisanpath.domain.conversation import (
 from kisanpath.domain.eligibility_engine import EligibilityEngine
 from kisanpath.domain.evidence import EvidenceVerifier
 from kisanpath.domain.profile import FactStatus, LanguageCode, ProfileFact
-from kisanpath.domain.profile_update import ProfileMerger
+from kisanpath.domain.profile_update import (
+    FieldInputProvenance,
+    ProfileMergeContext,
+    ProfileMerger,
+)
 from kisanpath.domain.response import ResponseComposer, ResponseLocalizer
 from kisanpath.persistence.repositories import ConversationRepository
 from kisanpath.retrieval.models import (
@@ -108,7 +112,13 @@ class TextEligibilityWorkflow:
         await self._conversations.add_conversation(state)
         return state
 
-    async def handle_text(self, conversation_id: str, message: TextMessage) -> TextWorkflowResult:
+    async def handle_text(
+        self,
+        conversation_id: str,
+        message: TextMessage,
+        *,
+        merge_context: ProfileMergeContext | None = None,
+    ) -> TextWorkflowResult:
         state = await self._conversations.get_conversation(conversation_id)
         if state is None:
             raise ConversationNotFoundError(f"conversation not found: {conversation_id}")
@@ -138,10 +148,15 @@ class TextEligibilityWorkflow:
                 pending_confirmation=pending_confirmation,
             )
         )
+        effective_context = merge_context or self._confirmation_context(
+            pending_confirmation,
+            message_id=message.message_id,
+        )
         merge = self._profile_merger.merge(
             state.current_profile,
             extraction,
             message_id=message.message_id,
+            context=effective_context,
         )
         language = self._resolve_language(
             merge.profile.preferred_language,
@@ -178,6 +193,14 @@ class TextEligibilityWorkflow:
                     proposed_value=candidate.proposed_value,
                     source_message_id=candidate.source_message_id,
                     prompt=prompt,
+                    reason=candidate.reason,
+                    alternatives=candidate.alternatives,
+                    source_modality=candidate.source_modality,
+                    source_provider=candidate.source_provider,
+                    source_model=candidate.source_model,
+                    asr_confidence=candidate.asr_confidence,
+                    source_segment_ids=candidate.source_segment_ids,
+                    ambiguity_ids=candidate.ambiguity_ids,
                 ),
                 processed_message_ids=(*state.processed_message_ids, message.message_id),
                 last_response_text=prompt,
@@ -347,6 +370,36 @@ class TextEligibilityWorkflow:
             expected_revision=state.revision,
         )
         return updated
+
+    @staticmethod
+    def _confirmation_context(
+        pending: PendingConfirmation | None,
+        *,
+        message_id: str,
+    ) -> ProfileMergeContext | None:
+        """Carry the original input provenance through an explicit confirmation turn."""
+
+        if pending is None:
+            return None
+        source = FieldInputProvenance(
+            field=pending.field,
+            source_message_id=pending.source_message_id,
+            source_modality=pending.source_modality,
+            source_provider=pending.source_provider,
+            source_model=pending.source_model,
+            asr_confidence=pending.asr_confidence,
+            source_segment_ids=pending.source_segment_ids,
+            ambiguity_ids=pending.ambiguity_ids,
+            alternatives=tuple(str(item) for item in pending.alternatives),
+        )
+        return ProfileMergeContext(
+            source_message_id=message_id,
+            source_modality=pending.source_modality,
+            source_provider=pending.source_provider,
+            source_model=pending.source_model,
+            transcript_confidence=pending.asr_confidence,
+            field_sources=(source,),
+        )
 
     @staticmethod
     def _resolve_language(

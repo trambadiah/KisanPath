@@ -37,3 +37,10 @@ fixture, and hybrid retrieval contracts are documented in
 The persistent text workflow, profile merge policy, deterministic/semantic
 eligibility boundary, evidence verification, localization, usage example, and E2E
 safety tests are documented in `../docs/22-text-vertical-slice.md`.
+
+## Voice boundary
+
+Provider-independent STT/TTS contracts, OpenAI adapters, canonical voice-to-text
+workflow integration, configuration, and the capability matrix are documented in
+`../docs/23-voice-abstraction.md`. See `examples/voice.example.toml` and
+`examples/voice_usage.py`.

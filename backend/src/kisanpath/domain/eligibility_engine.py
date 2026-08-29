@@ -6,7 +6,7 @@ import json
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from enum import Enum
-from typing import Protocol
+from typing import Protocol, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.types import JsonValue
@@ -346,7 +346,7 @@ class EligibilityEngine:
         if isinstance(value, BaseModel):
             return json.loads(value.model_dump_json())  # type: ignore[no-any-return]
         if isinstance(value, Enum):
-            return value.value
+            return cast(JsonValue, value.value)
         if isinstance(value, Decimal):
             return str(value)
         if isinstance(value, tuple):

@@ -11,7 +11,10 @@ def test_vendor_sdks_are_imported_only_inside_provider_adapters() -> None:
 
     for path in source_root.rglob("*.py"):
         relative = path.relative_to(source_root)
-        if relative.parts[:2] == ("llm", "providers"):
+        if relative.parts[:2] == ("llm", "providers") or relative.parts[:3] in {
+            ("voice", "stt", "providers"),
+            ("voice", "tts", "providers"),
+        }:
             continue
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for node in ast.walk(tree):

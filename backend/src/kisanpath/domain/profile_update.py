@@ -15,8 +15,10 @@ from kisanpath.domain.profile import (
     FactStatus,
     FarmerCategory,
     FarmerProfile,
+    InputModality,
     IrrigationType,
     LandArea,
+    LandNormalizationStatus,
     LandOwnership,
     LandUnit,
     LanguageCode,
@@ -83,6 +85,156 @@ class ConfirmationCandidate(BaseModel):
     proposed_value: JsonValue
     source_message_id: str = Field(min_length=1)
     reason: str = Field(min_length=1)
+    alternatives: tuple[JsonValue, ...] = ()
+    source_modality: InputModality = InputModality.TEXT
+    source_provider: str | None = Field(default=None, min_length=1)
+    source_model: str | None = Field(default=None, min_length=1)
+    asr_confidence: float | None = Field(default=None, ge=0, le=1)
+    source_segment_ids: tuple[str, ...] = ()
+    ambiguity_ids: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def validate_source(self) -> ConfirmationCandidate:
+        if self.source_modality is InputModality.VOICE:
+            if not self.source_provider or not self.source_model:
+                raise ValueError("voice confirmation candidate requires provider and model")
+        elif self.asr_confidence is not None or self.source_segment_ids or self.ambiguity_ids:
+            raise ValueError("ASR metadata requires a voice confirmation candidate")
+        return self
+
+
+class ASRSegmentProvenance(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    segment_id: str = Field(min_length=1)
+    text: str = Field(min_length=1, max_length=1000)
+    confidence: float | None = Field(default=None, ge=0, le=1)
+
+
+class ASRAmbiguityProvenance(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    ambiguity_id: str = Field(min_length=1)
+    text: str = Field(min_length=1, max_length=500)
+    alternatives: tuple[str, ...] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def unique_alternatives(self) -> ASRAmbiguityProvenance:
+        normalized = tuple(item.casefold() for item in self.alternatives)
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("ASR alternatives must be unique")
+        return self
+
+
+class FieldInputProvenance(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    field: str | None = Field(default=None, min_length=1)
+    source_message_id: str = Field(min_length=1)
+    source_modality: InputModality
+    source_provider: str | None = Field(default=None, min_length=1)
+    source_model: str | None = Field(default=None, min_length=1)
+    asr_confidence: float | None = Field(default=None, ge=0, le=1)
+    source_segment_ids: tuple[str, ...] = ()
+    ambiguity_ids: tuple[str, ...] = ()
+    alternatives: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def validate_source(self) -> FieldInputProvenance:
+        if self.source_modality is InputModality.VOICE:
+            if not self.source_provider or not self.source_model:
+                raise ValueError("voice field provenance requires provider and model")
+        elif self.asr_confidence is not None or self.source_segment_ids or self.ambiguity_ids:
+            raise ValueError("ASR metadata requires voice field provenance")
+        if len(self.source_segment_ids) != len(set(self.source_segment_ids)):
+            raise ValueError("source segment IDs must be unique")
+        if len(self.ambiguity_ids) != len(set(self.ambiguity_ids)):
+            raise ValueError("ambiguity IDs must be unique")
+        return self
+
+
+class ProfileMergeContext(BaseModel):
+    """Trusted transport provenance supplied by text/voice orchestration."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    source_message_id: str = Field(min_length=1)
+    source_modality: InputModality = InputModality.TEXT
+    source_provider: str | None = Field(default=None, min_length=1)
+    source_model: str | None = Field(default=None, min_length=1)
+    transcript_confidence: float | None = Field(default=None, ge=0, le=1)
+    segments: tuple[ASRSegmentProvenance, ...] = ()
+    ambiguities: tuple[ASRAmbiguityProvenance, ...] = ()
+    field_sources: tuple[FieldInputProvenance, ...] = ()
+
+    @model_validator(mode="after")
+    def validate_context(self) -> ProfileMergeContext:
+        if self.source_modality is InputModality.VOICE:
+            if not self.source_provider or not self.source_model:
+                raise ValueError("voice merge context requires provider and model")
+        elif (
+            self.transcript_confidence is not None
+            or self.segments
+            or self.ambiguities
+            or any(item.source_modality is InputModality.VOICE for item in self.field_sources)
+        ):
+            raise ValueError("ASR metadata requires a voice merge context")
+        explicit_fields = tuple(
+            item.field for item in self.field_sources if item.field is not None
+        )
+        if len(explicit_fields) != len(set(explicit_fields)):
+            raise ValueError("field sources must identify unique fields")
+        segment_ids = tuple(item.segment_id for item in self.segments)
+        if len(segment_ids) != len(set(segment_ids)):
+            raise ValueError("ASR segment IDs must be unique")
+        ambiguity_ids = tuple(item.ambiguity_id for item in self.ambiguities)
+        if len(ambiguity_ids) != len(set(ambiguity_ids)):
+            raise ValueError("ASR ambiguity IDs must be unique")
+        return self
+
+    def for_field(self, field: str, utterance: str | None) -> FieldInputProvenance:
+        explicit = next((item for item in self.field_sources if item.field == field), None)
+        if explicit is not None:
+            return explicit
+        normalized = " ".join((utterance or "").casefold().split())
+        matched_segments = tuple(
+            segment
+            for segment in self.segments
+            if not normalized
+            or normalized in " ".join(segment.text.casefold().split())
+            or " ".join(segment.text.casefold().split()) in normalized
+        )
+        confidences = tuple(
+            segment.confidence
+            for segment in matched_segments
+            if segment.confidence is not None
+        )
+        asr_confidence = min(confidences) if confidences else self.transcript_confidence
+        matched_ambiguities = tuple(
+            ambiguity
+            for ambiguity in self.ambiguities
+            if not normalized
+            or " ".join(ambiguity.text.casefold().split()) in normalized
+            or any(
+                " ".join(alternative.casefold().split()) in normalized
+                for alternative in ambiguity.alternatives
+            )
+        )
+        return FieldInputProvenance(
+            field=field,
+            source_message_id=self.source_message_id,
+            source_modality=self.source_modality,
+            source_provider=self.source_provider,
+            source_model=self.source_model,
+            asr_confidence=asr_confidence,
+            source_segment_ids=tuple(segment.segment_id for segment in matched_segments),
+            ambiguity_ids=tuple(item.ambiguity_id for item in matched_ambiguities),
+            alternatives=tuple(
+                alternative
+                for ambiguity in matched_ambiguities
+                for alternative in ambiguity.alternatives
+            ),
+        )
 
 
 class ProfileMergeResult(BaseModel):
@@ -116,7 +268,9 @@ class ProfileMerger:
         extraction: ProfileExtraction,
         *,
         message_id: str,
+        context: ProfileMergeContext | None = None,
     ) -> ProfileMergeResult:
+        merge_context = context or ProfileMergeContext(source_message_id=message_id)
         updates: dict[str, object] = {}
         changed: list[str] = []
         conflicts: list[str] = []
@@ -142,6 +296,7 @@ class ProfileMerger:
                     message_id=message_id,
                     critical=True,
                     confirmed="state" in extraction.confirmed_fields,
+                    source=merge_context.for_field("state", extraction.state.source_utterance),
                 ),
             )
         if extraction.district:
@@ -155,6 +310,9 @@ class ProfileMerger:
                     message_id=message_id,
                     critical=True,
                     confirmed="district" in extraction.confirmed_fields,
+                    source=merge_context.for_field(
+                        "district", extraction.district.source_utterance
+                    ),
                 ),
             )
         if extraction.village:
@@ -166,6 +324,9 @@ class ProfileMerger:
                     field="village",
                     message_id=message_id,
                     confirmed="village" in extraction.confirmed_fields,
+                    source=merge_context.for_field(
+                        "village", extraction.village.source_utterance
+                    ),
                 ),
             )
         if extraction.land_area:
@@ -187,6 +348,16 @@ class ProfileMerger:
                     message_id=message_id,
                     critical=True,
                     confirmed="land_area" in extraction.confirmed_fields,
+                    source=merge_context.for_field(
+                        "land_area", extraction.land_area.source_utterance
+                    ),
+                    forced_confirmation_reason=(
+                        "regional_land_unit_requires_confirmation"
+                        if normalized_area.normalization_status
+                        is LandNormalizationStatus.REGIONAL_CONTEXT_REQUIRED
+                        and merge_context.source_modality is InputModality.VOICE
+                        else None
+                    ),
                 ),
             )
 
@@ -204,6 +375,7 @@ class ProfileMerger:
                         field=name,
                         message_id=message_id,
                         confirmed=name in extraction.confirmed_fields,
+                        source=merge_context.for_field(name, extracted.source_utterance),
                     ),
                 )
 
@@ -233,6 +405,7 @@ class ProfileMerger:
                         field=name,
                         message_id=message_id,
                         confirmed=name in extraction.confirmed_fields,
+                        source=merge_context.for_field(name, extracted.source_utterance),
                     ),
                 )
 
@@ -258,12 +431,27 @@ class ProfileMerger:
         message_id: str,
         critical: bool = False,
         confirmed: bool = False,
+        source: FieldInputProvenance,
+        forced_confirmation_reason: str | None = None,
     ) -> _FactMerge[ValueT]:
+        confidences = tuple(
+            confidence
+            for confidence in (extracted.confidence, source.asr_confidence)
+            if confidence is not None
+        )
+        effective_confidence = min(confidences) if confidences else None
         provenance = FactProvenance(
-            source_message_id=message_id,
+            source_message_id=source.source_message_id,
             source_utterance=extracted.source_utterance,
-            confidence=extracted.confidence,
+            confidence=effective_confidence,
             confirmed=confirmed,
+            source_modality=source.source_modality,
+            source_provider=source.source_provider,
+            source_model=source.source_model,
+            asr_confidence=source.asr_confidence,
+            source_segment_ids=source.source_segment_ids,
+            ambiguity_ids=source.ambiguity_ids,
+            confirmed_by_message_id=message_id if confirmed else None,
         )
         if confirmed:
             return _FactMerge(
@@ -278,12 +466,16 @@ class ProfileMerger:
                 conflict=False,
                 confirmation=None,
             )
+        confirmation_reason = forced_confirmation_reason
+        if source.ambiguity_ids:
+            confirmation_reason = "asr_ambiguity_requires_confirmation"
         if (
             critical
             and not confirmed
             and (
-                extracted.confidence is None
-                or extracted.confidence < self._critical_confidence_threshold
+                confirmation_reason is not None
+                or effective_confidence is None
+                or effective_confidence < self._critical_confidence_threshold
             )
         ):
             return _FactMerge(
@@ -293,8 +485,16 @@ class ProfileMerger:
                 confirmation=ConfirmationCandidate(
                     field=field,
                     proposed_value=self._json_value(extracted.value),
-                    source_message_id=message_id,
-                    reason="critical_value_below_confidence_threshold",
+                    source_message_id=source.source_message_id,
+                    reason=confirmation_reason
+                    or "critical_value_below_confidence_threshold",
+                    alternatives=tuple(source.alternatives),
+                    source_modality=source.source_modality,
+                    source_provider=source.source_provider,
+                    source_model=source.source_model,
+                    asr_confidence=source.asr_confidence,
+                    source_segment_ids=source.source_segment_ids,
+                    ambiguity_ids=source.ambiguity_ids,
                 ),
             )
         if current.status is FactStatus.UNKNOWN:
@@ -337,8 +537,15 @@ class ProfileMerger:
             confirmation=ConfirmationCandidate(
                 field=field,
                 proposed_value=self._json_value(extracted.value),
-                source_message_id=message_id,
+                source_message_id=source.source_message_id,
                 reason="conflicts_with_canonical_profile",
+                alternatives=tuple(source.alternatives),
+                source_modality=source.source_modality,
+                source_provider=source.source_provider,
+                source_model=source.source_model,
+                asr_confidence=source.asr_confidence,
+                source_segment_ids=source.source_segment_ids,
+                ambiguity_ids=source.ambiguity_ids,
             ),
         )
 
