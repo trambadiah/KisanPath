@@ -179,9 +179,7 @@ class ProfileMergeContext(BaseModel):
             or any(item.source_modality is InputModality.VOICE for item in self.field_sources)
         ):
             raise ValueError("ASR metadata requires a voice merge context")
-        explicit_fields = tuple(
-            item.field for item in self.field_sources if item.field is not None
-        )
+        explicit_fields = tuple(item.field for item in self.field_sources if item.field is not None)
         if len(explicit_fields) != len(set(explicit_fields)):
             raise ValueError("field sources must identify unique fields")
         segment_ids = tuple(item.segment_id for item in self.segments)
@@ -205,9 +203,7 @@ class ProfileMergeContext(BaseModel):
             or " ".join(segment.text.casefold().split()) in normalized
         )
         confidences = tuple(
-            segment.confidence
-            for segment in matched_segments
-            if segment.confidence is not None
+            segment.confidence for segment in matched_segments if segment.confidence is not None
         )
         asr_confidence = min(confidences) if confidences else self.transcript_confidence
         matched_ambiguities = tuple(
@@ -324,9 +320,7 @@ class ProfileMerger:
                     field="village",
                     message_id=message_id,
                     confirmed="village" in extraction.confirmed_fields,
-                    source=merge_context.for_field(
-                        "village", extraction.village.source_utterance
-                    ),
+                    source=merge_context.for_field("village", extraction.village.source_utterance),
                 ),
             )
         if extraction.land_area:
@@ -486,8 +480,7 @@ class ProfileMerger:
                     field=field,
                     proposed_value=self._json_value(extracted.value),
                     source_message_id=source.source_message_id,
-                    reason=confirmation_reason
-                    or "critical_value_below_confidence_threshold",
+                    reason=confirmation_reason or "critical_value_below_confidence_threshold",
                     alternatives=tuple(source.alternatives),
                     source_modality=source.source_modality,
                     source_provider=source.source_provider,

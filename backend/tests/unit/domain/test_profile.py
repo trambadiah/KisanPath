@@ -63,9 +63,7 @@ def test_conflicting_fact_preserves_alternatives_without_selecting_one() -> None
 
 def test_conflicting_fact_requires_distinct_alternatives() -> None:
     with pytest.raises(ValidationError):
-        ProfileFact[str](
-            status=FactStatus.CONFLICTING, alternatives=("owner", "owner")
-        )
+        ProfileFact[str](status=FactStatus.CONFLICTING, alternatives=("owner", "owner"))
 
 
 def test_profile_round_trip_preserves_provenance_and_decimal() -> None:
@@ -74,9 +72,7 @@ def test_profile_round_trip_preserves_provenance_and_decimal() -> None:
             status=FactStatus.KNOWN,
             value="Gujarat",
             provenance=(
-                FactProvenance(
-                    source_message_id="message-1", confidence=0.98, confirmed=True
-                ),
+                FactProvenance(source_message_id="message-1", confidence=0.98, confirmed=True),
             ),
         ),
         land_area=ProfileFact(

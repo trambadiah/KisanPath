@@ -44,3 +44,21 @@ Provider-independent STT/TTS contracts, OpenAI adapters, canonical voice-to-text
 workflow integration, configuration, and the capability matrix are documented in
 `../docs/23-voice-abstraction.md`. See `examples/voice.example.toml` and
 `examples/voice_usage.py`.
+
+## Runtime hardening
+
+The FastAPI safety shell, correlation/logging/metrics boundaries, provider retry
+policy, admin RBAC, evidence injection controls, Alembic migration path, Docker
+Compose setup, load scaffold, and explicit limitations are documented in
+`../docs/24-production-hardening.md`.
+
+Local verification:
+
+```bash
+cd backend
+python3 -m venv .venv
+.venv/bin/pip install -e '.[dev]'
+.venv/bin/ruff check src tests
+.venv/bin/mypy src/kisanpath
+.venv/bin/pytest
+```

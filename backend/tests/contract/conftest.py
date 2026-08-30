@@ -85,12 +85,8 @@ class FakeOpenAICompletions:
         if kwargs.get("stream"):
             return AsyncItems(
                 [
-                    {
-                        "choices": [{"delta": {"content": "hello "}, "finish_reason": None}]
-                    },
-                    {
-                        "choices": [{"delta": {"content": "farmer"}, "finish_reason": "stop"}]
-                    },
+                    {"choices": [{"delta": {"content": "hello "}, "finish_reason": None}]},
+                    {"choices": [{"delta": {"content": "farmer"}, "finish_reason": "stop"}]},
                     {
                         "choices": [],
                         "usage": {

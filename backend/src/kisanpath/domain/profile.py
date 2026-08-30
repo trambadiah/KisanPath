@@ -86,11 +86,7 @@ class FactProvenance(BaseModel):
         if self.source_modality is InputModality.VOICE:
             if not self.source_provider or not self.source_model:
                 raise ValueError("voice provenance requires provider and model")
-        elif (
-            self.asr_confidence is not None
-            or self.source_segment_ids
-            or self.ambiguity_ids
-        ):
+        elif self.asr_confidence is not None or self.source_segment_ids or self.ambiguity_ids:
             raise ValueError("ASR metadata is only valid for voice provenance")
         if len(self.source_segment_ids) != len(set(self.source_segment_ids)):
             raise ValueError("source segment IDs must be unique")
@@ -143,9 +139,7 @@ class LandArea(BaseModel):
 
     value: Decimal = Field(gt=0, max_digits=14, decimal_places=4)
     unit: LandUnit
-    normalized_hectares: Decimal | None = Field(
-        default=None, gt=0, max_digits=14, decimal_places=6
-    )
+    normalized_hectares: Decimal | None = Field(default=None, gt=0, max_digits=14, decimal_places=6)
     normalization_status: LandNormalizationStatus
     normalization_rule: str | None = Field(default=None, min_length=1)
 

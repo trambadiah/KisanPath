@@ -79,13 +79,14 @@ def build_router(
     mode: RouterMode = RouterMode.PRODUCTION,
     evaluation_fallback_enabled: bool = False,
 ) -> LLMRouter:
+    async def no_sleep(_delay: float) -> None:
+        return None
+
     providers = {
         alias: ProviderSettings(adapter=alias, model=f"{alias}-model") for alias in clients
     }
     settings = LLMSettings(
-        default=RouteSettings(
-            provider="primary", model="route-model", fallbacks=("fallback",)
-        ),
+        default=RouteSettings(provider="primary", model="route-model", fallbacks=("fallback",)),
         agents={"profile": RouteSettings(provider="fallback")},
         providers=providers,
         fallback_enabled=True,
@@ -94,7 +95,7 @@ def build_router(
     registry = ProviderRegistry()
     for alias, client in clients.items():
         registry.register(alias, lambda _alias, _settings, _env, client=client: client)
-    return LLMRouter(settings, registry, mode=mode, environ={})
+    return LLMRouter(settings, registry, mode=mode, environ={}, sleep=no_sleep)
 
 
 def request() -> LLMRequest:
@@ -122,7 +123,7 @@ async def test_transient_failure_falls_back_with_provider_specific_model() -> No
 
     assert response.provider == "fallback"
     assert response.provider_metadata["fallback_from"] == "primary"
-    assert clients["primary"].models_seen == ["route-model"]
+    assert clients["primary"].models_seen == ["route-model", "route-model"]
     assert clients["fallback"].models_seen == ["fallback-model"]
 
 
@@ -143,9 +144,7 @@ async def test_evaluation_fallback_can_be_enabled_explicitly() -> None:
         "primary": StubClient("primary", LLMUnavailableError("down")),
         "fallback": StubClient("fallback"),
     }
-    router = build_router(
-        clients, mode=RouterMode.EVALUATION, evaluation_fallback_enabled=True
-    )
+    router = build_router(clients, mode=RouterMode.EVALUATION, evaluation_fallback_enabled=True)
 
     response = await router.generate(request())
     assert response.provider == "fallback"
@@ -193,9 +192,7 @@ async def test_required_capability_is_checked_before_call() -> None:
 def test_duplicate_registry_adapter_is_rejected() -> None:
     registry = ProviderRegistry()
 
-    def factory(
-        _alias: str, _settings: ProviderSettings, _env: Mapping[str, str]
-    ) -> LLMClient:
+    def factory(_alias: str, _settings: ProviderSettings, _env: Mapping[str, str]) -> LLMClient:
         return StubClient("test")
 
     registry.register("test", factory)

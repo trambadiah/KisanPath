@@ -210,7 +210,4 @@ def test_ambiguous_regional_land_unit_from_voice_requires_confirmation() -> None
     )
 
     assert result.profile.land_area.status is FactStatus.UNKNOWN
-    assert (
-        result.confirmation_candidates[0].reason
-        == "regional_land_unit_requires_confirmation"
-    )
+    assert result.confirmation_candidates[0].reason == "regional_land_unit_requires_confirmation"

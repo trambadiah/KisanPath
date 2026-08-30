@@ -82,9 +82,7 @@ class OpenAISTTClient:
             async with asyncio.timeout(request.timeout_seconds or self._timeout_seconds):
                 raw = await self._client.audio.transcriptions.create(**kwargs)
         except Exception as exc:
-            raise normalize_voice_error(
-                exc, provider=self._alias, model=self._model
-            ) from exc
+            raise normalize_voice_error(exc, provider=self._alias, model=self._model) from exc
 
         try:
             text = str(_value(raw, "text", "")).strip()
@@ -118,9 +116,7 @@ class OpenAISTTClient:
             return TranscriptionResult(
                 transcript_id=request.request_id,
                 text=text,
-                language=self._language(
-                    _value(raw, "language", None), request.language_hint
-                ),
+                language=self._language(_value(raw, "language", None), request.language_hint),
                 confidence=confidence,
                 segments=segments,
                 provider=self._alias,

@@ -114,9 +114,7 @@ def load_voice_settings(
             with resolved.open("rb") as handle:
                 document = tomllib.load(handle)
         except (OSError, tomllib.TOMLDecodeError) as exc:
-            raise VoiceConfigurationError(
-                f"Unable to load voice config from {resolved}"
-            ) from exc
+            raise VoiceConfigurationError(f"Unable to load voice config from {resolved}") from exc
         voice = document.get("voice", document)
         if not isinstance(voice, dict):
             raise VoiceConfigurationError("voice configuration must be a table")
@@ -127,12 +125,16 @@ def load_voice_settings(
     if value := env.get("TTS_PROVIDER"):
         raw["tts_provider"] = value
 
-    stt_providers = dict(raw.get("stt_providers", {})) if config_path else {
-        alias: item.model_dump() for alias, item in _default_stt().items()
-    }
-    tts_providers = dict(raw.get("tts_providers", {})) if config_path else {
-        alias: item.model_dump() for alias, item in _default_tts().items()
-    }
+    stt_providers = (
+        dict(raw.get("stt_providers", {}))
+        if config_path
+        else {alias: item.model_dump() for alias, item in _default_stt().items()}
+    )
+    tts_providers = (
+        dict(raw.get("tts_providers", {}))
+        if config_path
+        else {alias: item.model_dump() for alias, item in _default_tts().items()}
+    )
     selected_stt = raw.get("stt_provider", "openai")
     selected_tts = raw.get("tts_provider", "openai")
     if model := env.get("STT_MODEL"):

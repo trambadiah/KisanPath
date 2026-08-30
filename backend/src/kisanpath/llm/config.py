@@ -73,6 +73,20 @@ class RouteSettings(BaseModel):
         return value
 
 
+class RetrySettings(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    max_attempts: int = Field(default=2, ge=1, le=5)
+    initial_backoff_seconds: float = Field(default=0.2, ge=0, le=30)
+    max_backoff_seconds: float = Field(default=2.0, ge=0, le=60)
+
+    @model_validator(mode="after")
+    def validate_backoff(self) -> RetrySettings:
+        if self.max_backoff_seconds < self.initial_backoff_seconds:
+            raise ValueError("max_backoff_seconds cannot be less than initial_backoff_seconds")
+        return self
+
+
 def _default_providers() -> dict[str, ProviderSettings]:
     return {
         "openai": ProviderSettings(
@@ -106,6 +120,7 @@ class LLMSettings(BaseModel):
     providers: dict[str, ProviderSettings] = Field(default_factory=_default_providers)
     fallback_enabled: bool = True
     evaluation_fallback_enabled: bool = False
+    retry: RetrySettings = Field(default_factory=RetrySettings)
 
     @model_validator(mode="after")
     def validate_routes(self) -> LLMSettings:
@@ -167,6 +182,15 @@ def load_llm_settings(
         raw["evaluation_fallback_enabled"] = _parse_bool(
             value, name="LLM_EVALUATION_FALLBACK_ENABLED"
         )
+    retry = dict(raw.get("retry", {}))
+    if value := env.get("LLM_RETRY_MAX_ATTEMPTS"):
+        retry["max_attempts"] = int(value)
+    if value := env.get("LLM_RETRY_INITIAL_BACKOFF_SECONDS"):
+        retry["initial_backoff_seconds"] = float(value)
+    if value := env.get("LLM_RETRY_MAX_BACKOFF_SECONDS"):
+        retry["max_backoff_seconds"] = float(value)
+    if retry:
+        raw["retry"] = retry
 
     defaults = _default_providers()
     providers: dict[str, Any]

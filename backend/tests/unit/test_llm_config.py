@@ -65,10 +65,7 @@ def test_environment_overrides_local_provider_urls() -> None:
         }
     )
     assert settings.providers["ollama"].base_url == "http://ollama.internal:11434"
-    assert (
-        settings.providers["openai_compatible"].base_url
-        == "https://models.internal/v1"
-    )
+    assert settings.providers["openai_compatible"].base_url == "https://models.internal/v1"
 
 
 def test_provider_rejects_relative_base_url() -> None:
@@ -101,9 +98,7 @@ api_key = ""
 
 
 def test_provider_resolves_only_named_environment_secret() -> None:
-    settings = ProviderSettings(
-        adapter="openai", model="test", api_key_env="KISANPATH_TEST_KEY"
-    )
+    settings = ProviderSettings(adapter="openai", model="test", api_key_env="KISANPATH_TEST_KEY")
     assert (
         settings.resolve_api_key(
             {"KISANPATH_TEST_KEY": "runtime-secret"}, required=True, alias="test"

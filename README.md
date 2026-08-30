@@ -99,6 +99,14 @@ Then add multi-scheme retrieval, verification, multilingual voice, richer UI, ob
 - Voice: push-to-talk, transcript confirmation for critical fields.
 - LLM providers: OpenAI, Anthropic, Gemini, Ollama, plus a generic OpenAI-compatible adapter.
 
+## Reproduction and hardening status
+
+The local container path is `docker compose up`; it explicitly runs database
+migrations before starting the API and frontend. Security, observability, lifecycle,
+provider-outage, load-test, and known-limitation details are maintained in
+`docs/24-production-hardening.md`. That document is intentionally explicit about
+which production integrations and public API routes are not yet implemented.
+
 ## Non-goals for the first release
 
 - official eligibility decisions;

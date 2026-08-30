@@ -39,9 +39,7 @@ def test_frozen_seed_dataset_loads_and_has_required_coverage() -> None:
 def test_seed_dataset_covers_all_gold_statuses() -> None:
     dataset = load_evaluation_dataset(DATASET_PATH)
     statuses = {
-        outcome.status
-        for case in dataset.cases
-        for outcome in case.expected_scheme_outcomes
+        outcome.status for case in dataset.cases for outcome in case.expected_scheme_outcomes
     }
     assert statuses == set(SchemeStatus)
 
@@ -77,9 +75,7 @@ def test_gold_fail_cannot_be_labeled_likely_eligible() -> None:
         ExpectedSchemeOutcome(
             scheme_id="synthetic-scheme",
             status=SchemeStatus.LIKELY_ELIGIBLE,
-            rule_outcomes=(
-                ExpectedRuleOutcome(rule_id="blocking-rule", result=RuleResult.FAIL),
-            ),
+            rule_outcomes=(ExpectedRuleOutcome(rule_id="blocking-rule", result=RuleResult.FAIL),),
             blocking_rule_ids=("blocking-rule",),
         )
 

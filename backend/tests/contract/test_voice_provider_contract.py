@@ -43,12 +43,8 @@ async def test_openai_stt_normalizes_transcript_confidence_and_request() -> None
             "logprobs": [{"logprob": math.log(0.9)}, {"logprob": math.log(0.81)}],
         }
     )
-    client = SimpleNamespace(
-        audio=SimpleNamespace(transcriptions=transcription), models=Models()
-    )
-    adapter = OpenAISTTClient(
-        alias="openai-stt", model="gpt-4o-mini-transcribe", client=client
-    )
+    client = SimpleNamespace(audio=SimpleNamespace(transcriptions=transcription), models=Models())
+    adapter = OpenAISTTClient(alias="openai-stt", model="gpt-4o-mini-transcribe", client=client)
 
     result = await adapter.transcribe(
         TranscriptionRequest(
@@ -120,9 +116,7 @@ async def test_openai_stt_rejects_malformed_provider_response_locally() -> None:
 async def test_openai_tts_normalizes_binary_audio_and_request() -> None:
     speech = AsyncCall(SimpleNamespace(content=b"synthetic-mp3"))
     client = SimpleNamespace(audio=SimpleNamespace(speech=speech), models=Models())
-    adapter = OpenAITTSClient(
-        alias="openai-tts", model="tts-1", voice="alloy", client=client
-    )
+    adapter = OpenAITTSClient(alias="openai-tts", model="tts-1", voice="alloy", client=client)
 
     result = await adapter.synthesize(
         SynthesisRequest(

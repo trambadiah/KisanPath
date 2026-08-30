@@ -29,9 +29,7 @@ class OpenAIToolCallAccumulator:
 
     def add(self, raw: Any, *, fallback_index: int) -> None:
         index = int(value(raw, "index", fallback_index) or 0)
-        call = self._calls.setdefault(
-            index, {"id": f"tool-{index}", "name": "", "arguments": ""}
-        )
+        call = self._calls.setdefault(index, {"id": f"tool-{index}", "name": "", "arguments": ""})
         if call_id := value(raw, "id"):
             call["id"] = str(call_id)
         function = value(raw, "function", {}) or {}
@@ -101,6 +99,13 @@ def normalize_error(exc: Exception, *, provider: str, model: str | None) -> LLME
         status_code = int(status) if status is not None else None
     except (TypeError, ValueError):
         status_code = None
+    retry_after: float | None = None
+    headers = value(response, "headers", {}) if response is not None else {}
+    try:
+        raw_retry_after = headers.get("retry-after") if headers else None
+        retry_after = float(raw_retry_after) if raw_retry_after is not None else None
+    except (TypeError, ValueError):
+        retry_after = None
 
     class_name = type(exc).__name__.lower()
     if status_code in {401, 403} or "authentication" in class_name or "permission" in class_name:
@@ -109,6 +114,7 @@ def normalize_error(exc: Exception, *, provider: str, model: str | None) -> LLME
             provider=provider,
             model=model,
             status_code=status_code,
+            retry_after_seconds=retry_after,
         )
     if status_code == 429 or "ratelimit" in class_name or "rate_limit" in class_name:
         return LLMRateLimitError(
@@ -116,6 +122,7 @@ def normalize_error(exc: Exception, *, provider: str, model: str | None) -> LLME
             provider=provider,
             model=model,
             status_code=status_code,
+            retry_after_seconds=retry_after,
         )
     if (
         status_code is not None

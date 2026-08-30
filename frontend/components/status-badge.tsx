@@ -1,15 +1,17 @@
+"use client";
+
 import { AlertTriangle, Check, CircleHelp, ShieldQuestion, X } from "lucide-react";
 
+import { useLocale } from "@/components/locale-provider";
 import type { EligibilityStatus, RuleResult } from "@/lib/contracts";
+import type { TranslationKey } from "@/lib/i18n";
 
-const eligibilityLabels: Record<EligibilityStatus, string> = {
-  LIKELY_ELIGIBLE: "Likely eligible",
-  NOT_ELIGIBLE: "Not eligible by a published condition",
-  INSUFFICIENT_INFORMATION: "Need more information",
-  MANUAL_REVIEW: "Manual review recommended",
+const eligibilityLabels: Record<EligibilityStatus, TranslationKey> = {
+  LIKELY_ELIGIBLE: "likelyEligible", NOT_ELIGIBLE: "notEligible", INSUFFICIENT_INFORMATION: "needInformation", MANUAL_REVIEW: "manualReview",
 };
 
 export function EligibilityStatusBadge({ status }: { status: EligibilityStatus }) {
+  const { t } = useLocale();
   const Icon = {
     LIKELY_ELIGIBLE: Check,
     NOT_ELIGIBLE: X,
@@ -19,7 +21,7 @@ export function EligibilityStatusBadge({ status }: { status: EligibilityStatus }
   return (
     <span className={`statusBadge status-${status.toLowerCase()}`}>
       <Icon size={14} strokeWidth={2.4} aria-hidden="true" />
-      {eligibilityLabels[status]}
+      {t(eligibilityLabels[status])}
     </span>
   );
 }

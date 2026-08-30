@@ -2,17 +2,14 @@
 
 import { AudioLines, Mic, RotateCcw, Square } from "lucide-react";
 
+import { useLocale } from "@/components/locale-provider";
 import type { VoiceState } from "@/lib/contracts";
+import type { TranslationKey } from "@/lib/i18n";
 
-const labels: Record<VoiceState, string> = {
-  idle: "Start voice input",
-  listening: "Stop recording",
-  processing: "Processing voice input",
-  speaking: "Stop spoken response",
-  error: "Retry voice input",
-};
+const labels: Record<VoiceState, TranslationKey> = { idle: "voiceStart", listening: "voiceStop", processing: "voiceProcessingLabel", speaking: "voiceStopResponse", error: "voiceRetryLabel" };
 
 export function VoiceOrb({ state, onPress, caption }: { state: VoiceState; onPress: () => void; caption: string }) {
+  const { t } = useLocale();
   const Icon = state === "listening" ? Square : state === "error" ? RotateCcw : state === "speaking" ? AudioLines : Mic;
   return (
     <div className={`voiceOrbWrap voice-${state}`}>
@@ -24,7 +21,7 @@ export function VoiceOrb({ state, onPress, caption }: { state: VoiceState; onPre
         className="voiceOrb"
         type="button"
         onClick={onPress}
-        aria-label={labels[state]}
+        aria-label={t(labels[state])}
         aria-pressed={state === "listening"}
         disabled={state === "processing"}
       >
@@ -41,7 +38,7 @@ export function VoiceOrb({ state, onPress, caption }: { state: VoiceState; onPre
         </span>
       </button>
       <p className="voiceHint">
-        {state === "listening" ? "Tap again when you’re done" : "Your transcript is always shown before a decision"}
+        {state === "listening" ? t("voiceFinishHint") : t("transcriptHint")}
       </p>
     </div>
   );

@@ -69,9 +69,7 @@ def test_usage_rejects_inconsistent_total() -> None:
 
 def test_structured_request_exposes_runtime_schema() -> None:
     request = StructuredLLMRequest(
-        request=LLMRequest(
-            messages=(LLMMessage(role=MessageRole.USER, content="return JSON"),)
-        ),
+        request=LLMRequest(messages=(LLMMessage(role=MessageRole.USER, content="return JSON"),)),
         output_schema=Result,
     )
     assert request.resolved_schema_name == "Result"
@@ -86,6 +84,4 @@ def test_structured_validation_accepts_json_fence() -> None:
 
 def test_structured_validation_maps_schema_error() -> None:
     with pytest.raises(LLMSchemaValidationError):
-        validate_structured_text(
-            '{"value":"unknown"}', Result, provider="fake", model="fake-model"
-        )
+        validate_structured_text('{"value":"unknown"}', Result, provider="fake", model="fake-model")

@@ -80,9 +80,7 @@ class OpenAITTSClient:
                 raw = await self._client.audio.speech.create(**kwargs)
                 audio = await self._read_audio(raw)
         except Exception as exc:
-            raise normalize_voice_error(
-                exc, provider=self._alias, model=self._model
-            ) from exc
+            raise normalize_voice_error(exc, provider=self._alias, model=self._model) from exc
         if not audio:
             raise VoiceResponseError(
                 "text-to-speech provider returned empty audio",

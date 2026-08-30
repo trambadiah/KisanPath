@@ -61,13 +61,9 @@ class ExpectedSchemeOutcome(BaseModel):
         if len(by_id) != len(self.rule_outcomes):
             raise ValueError("gold rule IDs must be unique per scheme")
         failed = {item.rule_id for item in self.rule_outcomes if item.result is RuleResult.FAIL}
-        unknown = {
-            item.rule_id for item in self.rule_outcomes if item.result is RuleResult.UNKNOWN
-        }
+        unknown = {item.rule_id for item in self.rule_outcomes if item.result is RuleResult.UNKNOWN}
         manual = {
-            item.rule_id
-            for item in self.rule_outcomes
-            if item.result is RuleResult.MANUAL_REVIEW
+            item.rule_id for item in self.rule_outcomes if item.result is RuleResult.MANUAL_REVIEW
         }
         if set(self.blocking_rule_ids) != failed:
             raise ValueError("gold blocking_rule_ids must exactly match FAIL outcomes")

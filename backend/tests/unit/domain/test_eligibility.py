@@ -65,9 +65,7 @@ def test_manual_review_requires_matching_manual_rule() -> None:
         scheme_id="scheme-1",
         status=SchemeStatus.MANUAL_REVIEW,
         rule_evaluations=(
-            evaluation(
-                "rule-1", RuleResult.MANUAL_REVIEW, evaluator=EvaluatorType.MANUAL
-            ),
+            evaluation("rule-1", RuleResult.MANUAL_REVIEW, evaluator=EvaluatorType.MANUAL),
         ),
         manual_review_rule_ids=("rule-1",),
     )

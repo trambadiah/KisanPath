@@ -97,7 +97,11 @@ export class SeededKisanPathClient implements KisanPathClient {
     };
     return {
       snapshot,
-      responseText: "મેં જમીનનો વિસ્તાર 3 એકર સાંભળ્યો. શું તે સાચું છે?",
+      responseText: {
+        gu: "મેં જમીનનો વિસ્તાર 3 એકર સાંભળ્યો. શું તે સાચું છે?",
+        hi: "मैंने भूमि क्षेत्र 3 एकड़ सुना। क्या यह सही है?",
+        en: "I heard the land area as 3 acres. Is that correct?",
+      }[language],
     };
   }
 }

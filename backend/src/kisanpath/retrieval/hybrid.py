@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass, field
+from time import perf_counter
 
+from kisanpath.observability.metrics import MetricsSink, NoopMetrics
+from kisanpath.observability.tracing import NoopTracer, Tracer
 from kisanpath.persistence.models import PublishedDocumentChunk, PublishedSchemeVersion
 from kisanpath.persistence.repositories import PublishedCorpusRepository
 from kisanpath.retrieval.base import SemanticSchemeRetriever, StructuredSchemeRetriever
@@ -15,6 +18,7 @@ from kisanpath.retrieval.models import (
     SemanticMatch,
     StructuredMatch,
 )
+from kisanpath.security.evidence import prepare_untrusted_evidence
 
 
 @dataclass
@@ -37,6 +41,8 @@ class HybridRetrievalService:
         structured: StructuredSchemeRetriever,
         semantic: SemanticSchemeRetriever,
         structured_weight: float = 0.7,
+        metrics: MetricsSink | None = None,
+        tracer: Tracer | None = None,
     ) -> None:
         if not 0 <= structured_weight <= 1:
             raise ValueError("structured_weight must be between zero and one")
@@ -44,8 +50,28 @@ class HybridRetrievalService:
         self._structured = structured
         self._semantic = semantic
         self._structured_weight = structured_weight
+        self._metrics = metrics or NoopMetrics()
+        self._tracer = tracer or NoopTracer()
 
     async def search(self, query: RetrievalQuery) -> tuple[HybridRetrievalResult, ...]:
+        started = perf_counter()
+        async with self._tracer.start_span(
+            "retrieval.hybrid",
+            attributes={"top_k": query.top_k, "language": query.language},
+        ) as span:
+            results = await self._search(query)
+            span.set_attribute("candidates_returned", len(results))
+        self._metrics.observe(
+            "kisanpath_retrieval_duration_ms",
+            (perf_counter() - started) * 1000,
+        )
+        self._metrics.observe(
+            "kisanpath_retrieval_candidates",
+            len(results),
+        )
+        return results
+
+    async def _search(self, query: RetrievalQuery) -> tuple[HybridRetrievalResult, ...]:
         structured_matches, semantic_matches, active = await asyncio.gather(
             self._structured.search(query),
             self._semantic.search(query),
@@ -117,16 +143,24 @@ class HybridRetrievalService:
         fused_score = self._structured_weight * (structured_score or 0) + (
             1 - self._structured_weight
         ) * (semantic_score or 0)
-        evidence = tuple(
-            RetrievalEvidence(
-                chunk_id=chunk.chunk_id,
-                document_id=chunk.document_id,
+        evidence_items: list[RetrievalEvidence] = []
+        for chunk in evidence_chunks:
+            prepared = prepare_untrusted_evidence(
+                chunk.text,
                 source_ref_id=chunk.source_ref_id,
                 locator=chunk.locator,
-                bounded_excerpt=chunk.text[:1000],
             )
-            for chunk in evidence_chunks
-        )
+            evidence_items.append(
+                RetrievalEvidence(
+                    chunk_id=chunk.chunk_id,
+                    document_id=chunk.document_id,
+                    source_ref_id=chunk.source_ref_id,
+                    locator=chunk.locator,
+                    bounded_excerpt=prepared.text,
+                    security_flags=prepared.suspicious_markers,
+                )
+            )
+        evidence = tuple(evidence_items)
         return HybridRetrievalResult(
             publication=candidate.publication,
             structured_score=structured_score,

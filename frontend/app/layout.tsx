@@ -6,6 +6,7 @@ import "@fontsource/noto-sans-gujarati/600.css";
 import "./globals.css";
 
 import type { Metadata, Viewport } from "next";
+import { LocaleProvider, T } from "@/components/locale-provider";
 
 export const metadata: Metadata = {
   title: { default: "KisanPath — Understand the schemes for your farm", template: "%s · KisanPath" },
@@ -21,10 +22,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="gu">
+    <html lang="en">
       <body>
-        <a className="skipLink" href="#main-content">Skip to main content</a>
-        {children}
+        <LocaleProvider>
+          <a className="skipLink" href="#main-content"><T id="skip" /></a>
+          {children}
+        </LocaleProvider>
       </body>
     </html>
   );

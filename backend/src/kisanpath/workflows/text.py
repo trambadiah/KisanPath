@@ -41,6 +41,7 @@ from kisanpath.workflows.models import (
     WorkflowEvent,
     WorkflowEventType,
 )
+from kisanpath.workflows.telemetry import NoopWorkflowObserver, WorkflowObserver
 
 
 class SchemeRetriever(Protocol):
@@ -84,6 +85,7 @@ class TextEligibilityWorkflow:
         composer: ResponseComposer | None = None,
         localizer: ResponseLocalizer | None = None,
         clock: Callable[[], datetime] | None = None,
+        observer: WorkflowObserver | None = None,
     ) -> None:
         self._conversations = conversations
         self._profile_extractor = profile_extractor
@@ -95,6 +97,7 @@ class TextEligibilityWorkflow:
         self._composer = composer or ResponseComposer()
         self._localizer = localizer or ResponseLocalizer()
         self._clock = clock or (lambda: datetime.now(UTC))
+        self._observer = observer or NoopWorkflowObserver()
 
     async def create_conversation(
         self,
@@ -368,6 +371,11 @@ class TextEligibilityWorkflow:
         await self._conversations.save_conversation(
             updated,
             expected_revision=state.revision,
+        )
+        self._observer.transition(
+            conversation_id=state.conversation_id,
+            from_stage=state.workflow_stage,
+            to_stage=target,
         )
         return updated
 

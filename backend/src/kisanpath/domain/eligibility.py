@@ -118,9 +118,7 @@ class SchemeEvaluation(BaseModel):
 
         failed = {item.rule_id for item in self.rule_evaluations if item.result is RuleResult.FAIL}
         unknown = {
-            item.rule_id
-            for item in self.rule_evaluations
-            if item.result is RuleResult.UNKNOWN
+            item.rule_id for item in self.rule_evaluations if item.result is RuleResult.UNKNOWN
         }
         manual = {
             item.rule_id
@@ -157,14 +155,10 @@ class SchemeEvaluation(BaseModel):
             raise ValueError("manual rule results require manual review unless a FAIL blocks")
 
         semantic_rules = [
-            item
-            for item in self.rule_evaluations
-            if item.evaluator_type is EvaluatorType.SEMANTIC
+            item for item in self.rule_evaluations if item.evaluator_type is EvaluatorType.SEMANTIC
         ]
         semantic_confidences = [
-            item.confidence
-            for item in semantic_rules
-            if item.confidence is not None
+            item.confidence for item in semantic_rules if item.confidence is not None
         ]
         expected_count = len(semantic_rules)
         expected_min = min(semantic_confidences) if semantic_confidences else None

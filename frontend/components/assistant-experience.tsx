@@ -5,12 +5,12 @@ import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { ConfirmationCard } from "@/components/confirmation-card";
+import { useLocale } from "@/components/locale-provider";
 import { ProfileChip } from "@/components/profile-chip";
 import { ErrorState, LoadingState, OfflineNotice } from "@/components/state-panels";
 import { VoiceOrb } from "@/components/voice-orb";
-import type { ConversationSnapshot, LanguageCode, VoiceState } from "@/lib/contracts";
+import type { ConversationSnapshot, VoiceState } from "@/lib/contracts";
 import { createKisanPathClient } from "@/lib/client";
-import { assistantCopy } from "@/lib/i18n";
 import { seededConversation } from "@/lib/seed-data";
 
 export function AssistantExperience() {
@@ -18,34 +18,33 @@ export function AssistantExperience() {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const sessionStartedRef = useRef(false);
+  const { language, t } = useLocale();
   const [snapshot, setSnapshot] = useState<ConversationSnapshot | null>(() =>
     process.env.NEXT_PUBLIC_KISANPATH_API_URL ? null : structuredClone(seededConversation),
   );
-  const [language, setLanguage] = useState<LanguageCode>("gu");
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [online, setOnline] = useState(true);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
-  const copy = assistantCopy[language];
 
   useEffect(() => {
+    if (sessionStartedRef.current) return;
+    sessionStartedRef.current = true;
     clientRef.current
       .createConversation({ preferredLanguage: language, clientCapabilities: { audioInput: true, audioOutput: true } })
       .then(setSnapshot)
-      .catch(() => setError("The session could not be started. Please retry."));
-  }, [language]);
+      .catch(() => setError(t("errorTitle")));
+  }, [language, t]);
 
   useEffect(() => {
-    const onLanguage = (event: Event) => setLanguage((event as CustomEvent<LanguageCode>).detail);
     const updateNetwork = () => setOnline(navigator.onLine);
-    window.addEventListener("kisanpath-language", onLanguage);
     window.addEventListener("online", updateNetwork);
     window.addEventListener("offline", updateNetwork);
     updateNetwork();
     return () => {
-      window.removeEventListener("kisanpath-language", onLanguage);
       window.removeEventListener("online", updateNetwork);
       window.removeEventListener("offline", updateNetwork);
     };
@@ -151,32 +150,32 @@ export function AssistantExperience() {
     updated.messages.push({
       id: "results-ready",
       role: "assistant",
-      text: "તમારી માહિતી તપાસી. મને 3 સમીક્ષા કરેલી ડેમો યોજનાઓ મળી છે—દરેક પરિણામ સાથે કારણ અને પુરાવો છે.",
-      language: "gu",
+      text: t("resultsMessage"),
+      language,
       timestamp: "now",
     });
     setSnapshot({ ...updated });
     setBusy(false);
   }
 
-  if (!snapshot && !error) return <div className="assistantLoading"><LoadingState label="Preparing your private session…" /></div>;
+  if (!snapshot && !error) return <div className="assistantLoading"><LoadingState label={t("preparing")} /></div>;
 
   return (
     <main className="assistantMain">
       {!online && <OfflineNotice />}
       <section className="assistantIntro">
-        <span className="eyebrow"><Signal size={13} />Private session · Demo mode</span>
-        <h1>{copy.title}</h1>
-        <p>Speak naturally. Important values are shown back to you before they affect a result.</p>
+        <span className="eyebrow"><Signal size={13} />{t("privateSession")}</span>
+        <h1>{t("assistantTitle")}</h1>
+        <p>{t("assistantIntro")}</p>
       </section>
 
       <div className="assistantWorkspace">
-        <section className="conversationPanel" aria-label="Conversation">
+        <section className="conversationPanel" aria-label={t("conversation")}>
           <div className="transcript" aria-live="polite" aria-relevant="additions">
             {snapshot?.messages.map((message) => (
               <div className={`messageRow message-${message.role}`} key={message.id}>
-                <div className="messageMeta"><span>{message.role === "assistant" ? "KisanPath" : "You"}</span><time>{message.timestamp}</time></div>
-                <p lang={message.language}>{message.text}</p>
+                <div className="messageMeta"><span>{message.role === "assistant" ? "KisanPath" : t("you")}</span><time>{message.timestamp}</time></div>
+                <p lang={message.id === "welcome" ? language : message.language}>{message.id === "welcome" ? t("welcome") : message.text}</p>
               </div>
             ))}
             <div ref={transcriptEndRef} />
@@ -188,14 +187,14 @@ export function AssistantExperience() {
               onPress={handleVoicePress}
               caption={
                 voiceState === "idle"
-                  ? copy.voiceIdle
+                  ? t("voiceIdle")
                   : voiceState === "listening"
-                    ? copy.voiceListening
+                    ? t("voiceListening")
                     : voiceState === "processing"
-                      ? copy.voiceProcessing
+                      ? t("voiceProcessing")
                       : voiceState === "speaking"
-                        ? copy.voiceSpeaking
-                        : "Try voice again"
+                        ? t("voiceSpeaking")
+                        : t("voiceRetry")
               }
             />
           </div>
@@ -207,26 +206,26 @@ export function AssistantExperience() {
           )}
           {snapshot?.recommendations.length ? (
             <div className="resultsReadyCard">
-              <div><span className="eyebrow"><Sparkles size={13} />Review complete</span><strong>{snapshot.recommendations.length} schemes may match your situation</strong><p>Each result separates confirmed facts, unknowns, and reviewed evidence.</p></div>
-              <Link className="button buttonPrimary" href="/schemes">View recommendations <ArrowRight size={16} /></Link>
+              <div><span className="eyebrow"><Sparkles size={13} />{t("reviewComplete")}</span><strong>{t("matches", { count: snapshot.recommendations.length })}</strong><p>{t("resultsBody")}</p></div>
+              <Link className="button buttonPrimary" href="/schemes">{t("viewResults")} <ArrowRight size={16} /></Link>
             </div>
           ) : null}
 
           <form className="messageComposer" onSubmit={submitText}>
             <Keyboard size={18} aria-hidden="true" />
-            <label className="srOnly" htmlFor="message-input">{copy.inputPlaceholder}</label>
-            <input id="message-input" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={copy.inputPlaceholder} disabled={!online || busy} />
-            <button type="submit" aria-label={copy.send} disabled={!draft.trim() || !online || busy}><Send size={18} aria-hidden="true" /></button>
+            <label className="srOnly" htmlFor="message-input">{t("inputPlaceholder")}</label>
+            <input id="message-input" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={t("inputPlaceholder")} disabled={!online || busy} />
+            <button type="submit" aria-label={t("send")} disabled={!draft.trim() || !online || busy}><Send size={18} aria-hidden="true" /></button>
           </form>
-          <p className="privacyLine"><LockKeyhole size={13} aria-hidden="true" />Do not share Aadhaar, bank details, or other sensitive identifiers.</p>
+          <p className="privacyLine"><LockKeyhole size={13} aria-hidden="true" />{t("sensitive")}</p>
         </section>
 
         <aside className="profileRail" aria-labelledby="profile-title">
-          <div className="profileRailHeader"><div><span className="eyebrow">Decision profile</span><h2 id="profile-title">Only relevant facts</h2></div><span className="profileCount">{snapshot?.profile.filter((fact) => fact.status === "confirmed").length ?? 0}/{snapshot?.profile.length ?? 0}</span></div>
+          <div className="profileRailHeader"><div><span className="eyebrow">{t("decisionProfile")}</span><h2 id="profile-title">{t("relevantFacts")}</h2></div><span className="profileCount">{snapshot?.profile.filter((fact) => fact.status === "confirmed").length ?? 0}/{snapshot?.profile.length ?? 0}</span></div>
           <div className="profileChipStack">
             {snapshot?.profile.map((fact) => <ProfileChip key={fact.id} fact={fact} onEdit={() => document.getElementById("message-input")?.focus()} />)}
           </div>
-          <div className="profileSafety"><Volume2 size={18} aria-hidden="true" /><p><strong>Voice facts keep their source.</strong>Confidence and confirmation remain attached to the canonical profile.</p></div>
+          <div className="profileSafety"><Volume2 size={18} aria-hidden="true" /><p><strong>{t("voiceSourceTitle")}</strong>{t("voiceSourceBody")}</p></div>
         </aside>
       </div>
     </main>

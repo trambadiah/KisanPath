@@ -167,9 +167,7 @@ class Scheme(BaseModel):
             *self.required_documents,
             *self.application_steps,
         )
-        referenced_ids = {
-            source_id for item in sourced_texts for source_id in item.source_ref_ids
-        }
+        referenced_ids = {source_id for item in sourced_texts for source_id in item.source_ref_ids}
         referenced_ids.update(rule.source_ref_id for rule in self.eligibility_rules)
         missing = referenced_ids.difference(sources)
         if missing:

@@ -70,28 +70,35 @@ class OpenAICompatibleAdapter:
         payload: dict[str, Any] = {
             "model": self._model_for(request),
             "messages": [
-                ({
-                    key: item
-                    for key, item in {
-                        "role": message.role.value,
-                        "content": message.content,
-                        "name": message.name,
-                        "tool_call_id": message.tool_call_id,
-                    }.items()
-                    if item is not None
-                } | ({
-                    "tool_calls": [
+                (
+                    {
+                        key: item
+                        for key, item in {
+                            "role": message.role.value,
+                            "content": message.content,
+                            "name": message.name,
+                            "tool_call_id": message.tool_call_id,
+                        }.items()
+                        if item is not None
+                    }
+                    | (
                         {
-                            "id": call.id,
-                            "type": "function",
-                            "function": {
-                                "name": call.name,
-                                "arguments": json.dumps(call.arguments),
-                            },
+                            "tool_calls": [
+                                {
+                                    "id": call.id,
+                                    "type": "function",
+                                    "function": {
+                                        "name": call.name,
+                                        "arguments": json.dumps(call.arguments),
+                                    },
+                                }
+                                for call in message.tool_calls
+                            ]
                         }
-                        for call in message.tool_calls
-                    ]
-                } if message.tool_calls else {}))
+                        if message.tool_calls
+                        else {}
+                    )
+                )
                 for message in request.messages
             ],
             "max_tokens": request.max_output_tokens,
@@ -268,9 +275,7 @@ def create_openai_compatible_client(
     alias: str, settings: ProviderSettings, environ: Mapping[str, str]
 ) -> OpenAICompatibleAdapter:
     if not settings.base_url:
-        raise LLMConfigurationError(
-            "OpenAI-compatible providers require base_url", provider=alias
-        )
+        raise LLMConfigurationError("OpenAI-compatible providers require base_url", provider=alias)
     api_key = settings.resolve_api_key(environ, required=False, alias=alias)
     headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
     return OpenAICompatibleAdapter(

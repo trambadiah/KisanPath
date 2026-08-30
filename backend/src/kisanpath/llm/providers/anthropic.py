@@ -217,8 +217,7 @@ class AnthropicAdapter:
                         usage = value(message, "usage", {}) or {}
                         input_tokens = int(value(usage, "input_tokens", 0) or 0)
                     elif (
-                        event_type == "content_block_delta"
-                        and value(delta, "type") == "text_delta"
+                        event_type == "content_block_delta" and value(delta, "type") == "text_delta"
                     ):
                         yield LLMStreamEvent(
                             event_type=StreamEventType.TEXT_DELTA,
@@ -231,7 +230,7 @@ class AnthropicAdapter:
                                 event_type=StreamEventType.USAGE,
                                 usage=TokenUsage(
                                     input_tokens=input_tokens,
-                                    output_tokens=int(value(usage, "output_tokens", 0) or 0)
+                                    output_tokens=int(value(usage, "output_tokens", 0) or 0),
                                 ),
                             )
                         stop = value(delta, "stop_reason")

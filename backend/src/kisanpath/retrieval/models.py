@@ -65,6 +65,7 @@ class RetrievalEvidence(BaseModel):
     source_ref_id: str = Field(min_length=1)
     locator: str = Field(min_length=1)
     bounded_excerpt: str = Field(min_length=1, max_length=1000)
+    security_flags: tuple[str, ...] = ()
 
 
 class HybridRetrievalResult(BaseModel):

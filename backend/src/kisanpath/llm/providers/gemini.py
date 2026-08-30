@@ -63,9 +63,7 @@ class GeminiAdapter:
     @staticmethod
     def _request_parts(request: LLMRequest) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         systems = [
-            message.content
-            for message in request.messages
-            if message.role is MessageRole.SYSTEM
+            message.content for message in request.messages if message.role is MessageRole.SYSTEM
         ]
         contents: list[dict[str, Any]] = []
         for message in request.messages:

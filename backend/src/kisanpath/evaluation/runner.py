@@ -44,14 +44,10 @@ class WorkflowCaseOutput(BaseModel):
     extracted_profile: FarmerProfile
     candidate_scheme_ids: tuple[str, ...]
     scheme_evaluations: tuple[SchemeEvaluation, ...]
-    claim_verifications: ClaimVerificationBatch = Field(
-        default_factory=ClaimVerificationBatch
-    )
+    claim_verifications: ClaimVerificationBatch = Field(default_factory=ClaimVerificationBatch)
     response_text: str | None = None
     usage: EvaluationUsage = Field(default_factory=EvaluationUsage)
-    provider_metadata: dict[str, str | int | float | bool | None] = Field(
-        default_factory=dict
-    )
+    provider_metadata: dict[str, str | int | float | bool | None] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_output(self) -> WorkflowCaseOutput:
